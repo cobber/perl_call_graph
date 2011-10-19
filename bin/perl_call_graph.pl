@@ -30,9 +30,9 @@ pod2usage(2)        if $parameters->{'help'} or ! $got_opts;
 my $start_node_regex = undef;
 
 if( $parameters->{'start'} )
-{
+    {
     $start_node_regex = qr/$parameters->{'start'}/i;
-}
+    }
 
 #
 # scan all input files for anything that "looks like" a function definition or a function call.
@@ -47,44 +47,44 @@ my $call_graph      = {};
 
 LINE:
 while( my $line = <> )
-{
-    unless( defined $current_file )
     {
+    unless( defined $current_file )
+        {
         $current_file   = $ARGV;
         $current_file   =~ s:.*[\\/]::; # only want the file name without path info
         $current_sub    = 'main';
-    }
+        }
 
     $line =~ s/[\n\r]*$//;  # platform independent chomp
 
     next LINE if $line =~ /^\s*(#.*)?$/;  # skip empty lines and comments
 
     if( $line =~ /^\s*sub\s+(\w+)/ )
-    {
+        {
         $current_sub = $1;
         $sub_definition->{$current_sub}{$current_file}{'line'} = $.;
         next LINE;
-    }
+        }
 
     if( $line =~ /^}/ )
-    {
+        {
         $current_sub = 'main';
         next LINE;
-    }
+        }
 
     while( $line =~ s/^.*?(?<![$%@])(\w+)\s*\(// )
-    {
+        {
         $sub_call->{$current_sub}{$current_file}{$1}++;
+        }
     }
-}
 continue
-{
-    if( eof )
     {
+    if( eof )
+        {
         close( ARGV );              # reset line numbers
         $current_file = undef;      # indicate that we've changed to a different file
+        }
     }
-}
 
 #
 # try to match callers with callees
@@ -93,56 +93,56 @@ continue
 # third:    complain about an ambiguous call if the callee has multiple definitions
 #
 foreach my $caller_sub ( keys %{$sub_call} )
-{
-    foreach my $caller_file ( keys %{$sub_call->{$caller_sub}} )
     {
-        foreach my $referenced_sub ( keys %{$sub_call->{$caller_sub}{$caller_file}} )
+    foreach my $caller_file ( keys %{$sub_call->{$caller_sub}} )
         {
+        foreach my $referenced_sub ( keys %{$sub_call->{$caller_sub}{$caller_file}} )
+            {
             # skip while(), for() and module calls
             next unless( exists $sub_definition->{$referenced_sub} );
 
             if( exists $sub_definition->{$referenced_sub}{$caller_file} )
-            {
+                {
                 $call_graph->{"$caller_file:$caller_sub"}{'invokes'}{"$caller_file:$referenced_sub"}++;
                 $call_graph->{"$caller_file:$referenced_sub"}{'invoked_by'}{"$caller_file:$caller_sub"}++;
                 next;
-            }
+                }
             my ( @matching_definitions ) = sort keys %{$sub_definition->{$referenced_sub}};
 
             if( @matching_definitions == 1 )
-            {
+                {
                 my $referenced_file = shift @matching_definitions;
                 $call_graph->{"$caller_file:$caller_sub"}{'invokes'}{"$referenced_file:$referenced_sub"}++;
                 $call_graph->{"$referenced_file:$referenced_sub"}{'invoked_by'}{"$caller_file:$caller_sub"}++;
-            }
+                }
             else
-            {
+                {
                 # print( "AMBIGUOS: $caller_file:$caller_sub() -> $referenced_sub() defined in @matching_definitions\n" );
+                }
             }
         }
     }
-}
 
 #
 # determine which nodes to start graphing from
 #
 my @initial_nodes = ();
 if( defined $start_node_regex )
-{
+    {
     @initial_nodes = sort grep( /$start_node_regex/, keys %{$call_graph} );
-}
+    }
 else
-{
+    {
     FILE_SUB:
     foreach my $file_sub ( sort keys %{$call_graph} )
-    {
-        unless( $call_graph->{$file_sub}{'invoked_by'} )
         {
+        unless( $call_graph->{$file_sub}{'invoked_by'} )
+            {
             push( @initial_nodes, $file_sub );
             next FILE_SUB;
+            }
         }
     }
-}
 
 #
 # Actually produce the graph
@@ -154,9 +154,9 @@ my $graph = graph->new(
                     );
 
 foreach my $file_sub ( @initial_nodes )
-{
+    {
     $graph->plot( $file_sub );
-}
+    }
 
 $graph->generate_dot();
 
@@ -165,47 +165,47 @@ exit( 0 );
 package graph;
 
 sub new
-{
+    {
     my $class = shift;
     my $self  = bless { @_ }, $class;
 
     return $self;
-}
+    }
 
 sub plot
-{
+    {
     my $self            = shift;
     my $from_file_sub   = shift;
     my $direction       = shift || undef; # up, down or undefined
 
     $self->{'node'}{$from_file_sub}++;
     unless( defined $direction )
-    {
+        {
         $self->{'initial_node'}{$from_file_sub}++;
         $direction = "up down";
-    }
+        }
 
     if( $direction =~ /up/ )
-    {
-        foreach my $parent_file_sub ( sort keys %{$self->{'call_graph'}{$from_file_sub}{'invoked_by'}} )
         {
+        foreach my $parent_file_sub ( sort keys %{$self->{'call_graph'}{$from_file_sub}{'invoked_by'}} )
+            {
             $self->{'edge'}{$parent_file_sub}{$from_file_sub}++;
             $self->plot( $parent_file_sub, 'up' )    unless $self->{'node'}{$parent_file_sub}++;
+            }
         }
-    }
 
     if( $direction =~ /down/ )
-    {
-        foreach my $to_file_sub ( sort keys %{$self->{'call_graph'}{$from_file_sub}{'invokes'}} )
         {
+        foreach my $to_file_sub ( sort keys %{$self->{'call_graph'}{$from_file_sub}{'invokes'}} )
+            {
             $self->{'edge'}{$from_file_sub}{$to_file_sub}++;
             $self->plot( $to_file_sub, 'down' )    unless $self->{'node'}{$to_file_sub}++;
+            }
         }
     }
-}
 
 sub generate_dot
-{
+    {
     my $self = shift;
 
     print <<_EO_HEADER;
@@ -226,13 +226,13 @@ _EO_HEADER
     my $indent = $self->{'cluster_files'} ? 8 : 4;
     my $cluster_file = '';
     foreach my $file_sub ( sort keys %{$self->{'node'}} )
-    {
+        {
         my ( $file, $sub ) = split( /:/, $file_sub );
 
         if( $self->{'cluster_files'}
-            and ( $cluster_file ne $file )
+                and ( $cluster_file ne $file )
             )
-        {
+            {
             # close the previous cluster
             printf( "       }\n" )      if $cluster_file;   # but only if there was a previous cluster
 
@@ -240,51 +240,51 @@ _EO_HEADER
 
             print <<_EO_SECTION_HEADER;
 
-    subgraph "cluster_$file"
-        {
-        label     = "$file";
-        style     = "bold";
-        fontname  = "Times-Bold";
-        fontsize  = 48;
-        fontcolor = "red";
+        subgraph "cluster_$file"
+            {
+            label     = "$file";
+            style     = "bold";
+            fontname  = "Times-Bold";
+            fontsize  = 48;
+            fontcolor = "red";
 
 _EO_SECTION_HEADER
-    }
+            }
 
-        my @node_attributes = ();
+            my @node_attributes = ();
 
-        push( @node_attributes, ( $self->{'cluster_files'}
-                                    ? sprintf( "label = \"%s\"",      $sub )
-                                    : sprintf( "label = \"%s | %s\"", $file, $sub )
-                                    ) );
+            push( @node_attributes, ( $self->{'cluster_files'}
+                        ? sprintf( "label = \"%s\"",      $sub )
+                        : sprintf( "label = \"%s | %s\"", $file, $sub )
+                        ) );
 
-        push( @node_attributes, 'color = green' )   if exists $self->{'initial_node'}{$file_sub};
+            push( @node_attributes, 'color = green' )   if exists $self->{'initial_node'}{$file_sub};
 
-        printf( "%s%-40s [%s];\n",
-                        ' ' x $indent,
-                        "\"${file_sub}\"",
-                        join( ", ", @node_attributes ),
-                        );
+            printf( "%s%-40s [%s];\n",
+                    ' ' x $indent,
+                    "\"${file_sub}\"",
+                    join( ", ", @node_attributes ),
+                  );
 
-    }
-
-    if( $self->{'cluster_files'} )
-        {
-        printf( "       }\n" )      if $cluster_file;   # but only if there was a previous cluster
         }
 
-    print "\n\n    // edges\n";
+        if( $self->{'cluster_files'} )
+            {
+            printf( "       }\n" )      if $cluster_file;   # but only if there was a previous cluster
+            }
 
-    foreach my $from_file_sub ( keys %{$self->{'edge'}} )
-    {
-        foreach my $to_file_sub ( keys %{$self->{'edge'}{$from_file_sub}} )
-        {
-            printf( "    %-40s -> %s;\n", "\"${from_file_sub}\"", "\"${to_file_sub}\"" );
+        print "\n\n    // edges\n";
+
+        foreach my $from_file_sub ( keys %{$self->{'edge'}} )
+            {
+            foreach my $to_file_sub ( keys %{$self->{'edge'}{$from_file_sub}} )
+                {
+                printf( "    %-40s -> %s;\n", "\"${from_file_sub}\"", "\"${to_file_sub}\"" );
+                }
+            }
+
+        print "\n    }\n";
         }
-    }
-
-    print "\n    }\n";
-}
 
 =head1 NAME
 
