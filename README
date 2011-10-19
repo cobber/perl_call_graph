@@ -31,14 +31,11 @@ Use your favourite pod2* script to convert it into your desired format. For exam
 Workflow:
 =========
 
-    1.  analyze all or part of your code, with perl_call_graph.pl, redirecting the
-        output to a file of your choice:
+    Normally it is enough to specifiy which functions you're interested in
+    (via --start) and the files in question (ie: all .pm files)
 
-            perl_call_graph.pl <perl files> [--cluster] [--start <regex>] > perl_call_graph.dot
+            perl_call_graph.pl [--cluster] [--start <regex>] [--jpg|--png] <perl files>
 
-    2.  Display the call graph with graphviz:
-
-            {just open the .dot file with graphviz}
 
 Stephen Riehm
-2009-01-16
+2011-10-19
