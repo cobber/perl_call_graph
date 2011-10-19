@@ -35,6 +35,7 @@ my $got_opts = GetOptions( $parameters,
     'start=s',
     # output formats
     'dot',
+    'svg',
     'jpg',
     'png',
     );
@@ -69,13 +70,13 @@ if( -d $parameters->{'output'} )
     $parameters->{'output'} =~ s:/*$:/$base_name:;
     }
 
-if( not -e $parameters->{'output'} and $parameters->{'output'} =~ s/\.(dot|jpg|png)$// )
+if( not -e $parameters->{'output'} and $parameters->{'output'} =~ s/\.(dot|svg|jpg|png)$// )
     {
     $parameters->{$1} = 1;
     }
 
 # generate dot files by default
-$parameters->{'dot'}      = 1   unless grep( defined, @{$parameters}{qw( dot jpg png )} );
+$parameters->{'dot'}      = 1   unless grep( defined, @{$parameters}{qw( dot svg jpg png )} );
 
 #
 # scan all input files for anything that "looks like" a function definition or a function call.
@@ -198,6 +199,7 @@ my $graph = graph->new(
                     'output_base_name'  => $parameters->{'output'},
                     'cluster_files'     => $parameters->{'cluster'},
                     'generate_dot'      => $parameters->{'dot'},
+                    'generate_svg'      => $parameters->{'svg'},
                     'generate_jpg'      => $parameters->{'jpg'},
                     'generate_png'      => $parameters->{'png'},
                     );
@@ -334,6 +336,19 @@ sub generate
             $self->{generate_dot} = 1;
             }
         }
+    if( $self->{'generate_svg'} )
+        {
+        if( $graph->can( 'as_svg' ) )
+            {
+            printf "Generating: %s\n", $self->{'output_base_name'} . '.svg';
+            $graph->as_svg(  $self->{'output_base_name'}.'.svg' ) 
+            }
+        else
+            {
+            printf "The installed GraphViz doesn't support svg\n";
+            $self->{generate_dot} = 1;
+            }
+        }
     if( $self->{'generate_dot'} )
         {
         printf "Generating: %s\n", $self->{'output_base_name'} . '.dot';
@@ -349,7 +364,7 @@ perl_call_graph.pl - generate a call graph in GraphViz' DOT format for a group o
 
 =head2 Graph as image:
 
-    % perl_call_graph [--[no]cluster] [--start <regex>] [--ignore <regex>...] [--output <dir|file>] [--[png|jpg]] *.pm
+    % perl_call_graph [--[no]cluster] [--start <regex>] [--ignore <regex>...] [--output <dir|file>] [--[png|jpg|svg]] *.pm
 
 =head2 Graph as DOT file (manual image creation via GraphViz):
 
@@ -442,6 +457,10 @@ Default: <current directory>
 Generate a DOT file which can be given to GraphViz for formatting into any graphical format.
 
 This is the default output format.
+
+=item --svg
+
+Generate a svg image of the resulting call graph.
 
 =item --jpg
 

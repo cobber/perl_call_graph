@@ -1,0 +1,2 @@
+TODO: Riehm 2011-10-19 include recursive directory walking
+                        eg: if no source provided - take everything under the current directory
