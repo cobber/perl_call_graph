@@ -126,6 +126,8 @@ while( my $line = <> )
         next LINE;
         }
 
+    # TODO: reliably recognise the end of a sub
+    # how about 'everything between the last closing curly and the current sub'? (re-evaluate calls)
     if( $line =~ /^}/ )
         {
         $current_sub = 'main';
@@ -138,6 +140,9 @@ while( my $line = <> )
     #   $var->foo()                 may match multiple classes
     #   $var->foo
     #   {$var->{method}}->foo
+    # currently - this is deliberatly very lenient - because we don't care
+    # about calls which don't match to a subroutine in one of the files that
+    # were provided
     while( $line =~ s/^.*?(?<![$%@])(\w+)\s*\(// )
         {
         $sub_call->{$current_sub}{$current_file}{$1}++;
