@@ -88,9 +88,12 @@ my $current_sub     = undef;
 my $sub_definition  = {};
 my $sub_call        = {};
 my $call_graph      = {};
+my $in_pod          = 0;
 
 die "Please specify some files to parse!\n" unless @ARGV;
 
+# TODO: replace this with a real perl parser (ha!) which properly handles
+# matching curlies, pod documentation etc.
 LINE:
 while( my $line = <> )
     {
@@ -105,7 +108,18 @@ while( my $line = <> )
 
     next LINE if $line =~ /^\s*(#.*)?$/;  # skip empty lines and comments
 
-    if( $line =~ /^\s*sub\s+(\w+)/ )
+    # skip pod documentation
+    if( $line =~ /^=(\w+)/ )
+        {
+        $in_pod = ( $1 eq 'cut' ) ? 0 : 1;
+        next LINE;
+        }
+
+    next LINE   if $in_pod;
+
+    # look for sub <...>
+    # but ignore lines which don't look like a real sub (ie: 'sub blah foo')
+    if( $line =~ /^\s*sub\s+(\w+)(?:\s*?(?:[#{].*)?)$/ )
         {
         $current_sub = $1;
         $sub_definition->{$current_sub}{$current_file}{'line'} = $.;
@@ -118,6 +132,12 @@ while( my $line = <> )
         next LINE;
         }
 
+    # TODO: extend to do clever things with method calls
+    # for example:
+    #   CLASS::SUBCLASS->foo()      file can be derived
+    #   $var->foo()                 may match multiple classes
+    #   $var->foo
+    #   {$var->{method}}->foo
     while( $line =~ s/^.*?(?<![$%@])(\w+)\s*\(// )
         {
         $sub_call->{$current_sub}{$current_file}{$1}++;
