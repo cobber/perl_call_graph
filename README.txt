@@ -5,7 +5,7 @@ This project provides a simple static analysis tool for examining the
 interactions between subroutines in one or more perl scripts.
 
 After scanning your code (including modules), a .dot file is generated, which
-you can then turn into pretty (?) diagrams using a wonderful free peice of
+you can then turn into pretty (?) diagrams using a wonderful free piece of
 software called GraphViz (http://www.graphviz.org)
 
 The analysis is quite simplistic, but having a graphic diagram of the call
